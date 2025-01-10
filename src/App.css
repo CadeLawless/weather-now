@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
-:root {
+body {
     --text: #e7f4e8;
     --background: #081309;
     --background-disabled: #29372a;
@@ -10,13 +10,44 @@
     --secondary-hover: #236928;
     --accent: #5ecf65;
 }
+body.day {
+    --text: #111212;
+    --background: #99eef9;
+    --background-disabled: #7fbbc3;
+    --background-lighter: #ade6ed;
+    --primary: #5aa4ae;
+    --secondary: #3ac0d3;
+    --secondary-hover: #309dad;
+    --accent: #5ecedd;
+}
+body.night {
+    --text: #e4e9ef;
+    --background: #041224;
+    --background-disabled: #3a4b61;
+    --background-lighter: #1e3553;
+    --primary: #9ab7de;
+    --secondary: #1f4c86;
+    --secondary-hover: #173965;
+    --accent: #2f7ce0;
+}
+body.rainy {
+    --text: #ebf5f7;
+    --background: #3a4e51;
+    --background-disabled: #58686b;
+    --background-lighter: #526669;
+    --primary: #91d7e2;
+    --secondary: #1b7785;
+    --secondary-hover: #176773;
+    --accent: #4ccfe4;
+}
 * {
     font-family: "Nunito";
 }
 
 body {
     background-color: var(--background);
-    color: var(--text)
+    color: var(--text);
+    transition: 0.4s;
 }
 
 .last-updated {

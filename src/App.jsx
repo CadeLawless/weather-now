@@ -23,12 +23,19 @@ function App() {
           ...state,
           isLoading: true,
           isError: false,
+          isDay: null,
+          isCloudy: null,
+          isRainy: null,
         };
       case 'FETCH_WEATHER_SUCCESS':
         return {
           ...state,
           isLoading: false,
           isError: false,
+          isDay: action.payload.current.is_day === 1,
+          isCloudy: ["Cloudy", "Overcast", "Fog", "Freezing Fog"].includes(action.payload.current.condition.text),
+          isRainy:
+            (["Mist", "Patchy light drizzle", "Light drizzle"].includes(action.payload.current.condition.text) || action.payload.current.condition.text.includes("rain")),
           data: action.payload,
         };
       case 'FETCH_WEATHER_FAILURE':
@@ -36,6 +43,9 @@ function App() {
           ...state,
           isLoading: false,
           isError: true,
+          isDay: null,
+          isCloudy: null,
+          isRainy: null,
         };
       default:
         throw new Error('Invalid action type');
@@ -48,7 +58,7 @@ function App() {
 
   const [weather, dispatchWeather] = React.useReducer(
     weatherReducer,
-    { data: [], isLoading: false, isError: false }
+    { data: [], isDay: null, isLoading: false, isError: false }
   );
 
   const handleFetchWeather = React.useCallback(async () => {
@@ -64,6 +74,7 @@ function App() {
           type: 'FETCH_WEATHER_SUCCESS',
           payload: result.data,
         });
+
       } catch {
         dispatchWeather({ type: 'FETCH_WEATHER_FAILURE' });
       }
@@ -82,6 +93,28 @@ function App() {
     setLocationParams(`${city},${state}`);
     event.preventDefault();
   };
+
+  React.useEffect(() => {
+    if(weather.isDay !== null){
+      if (weather.isDay) {
+        if(weather.isCloudy){
+          document.body.classList.add("cloudy");
+          document.body.classList.remove("night", "day", "rainy");
+        }else if(weather.isRainy){
+          document.body.classList.add("rainy");
+          document.body.classList.remove("night", "day", "cloudy");
+        }else{
+          document.body.classList.add("day");
+          document.body.classList.remove("night", "cloudy", "rainy");
+        }
+      } else {
+        document.body.classList.add("night");
+        document.body.classList.remove("day", "cloudy", "rainy");
+      }
+    }else{
+      document.body.classList.remove("day", "night", "cloudy", "rainy");
+    }
+  }, [weather.isDay]);
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>

@@ -120,11 +120,7 @@ function App() {
   );
 }
 
-const WeatherSummary = ({ weather }) => {
-  if (!weather?.current || !weather?.location) {
-    return <p>Weather data is not available.</p>;
-  }
-  
+const WeatherSummary = ({ weather }) => {  
   const date = new Date(weather.current.last_updated_epoch * 1000);
 
   const date_updated = date.toLocaleString('en-US');

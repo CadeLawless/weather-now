@@ -2,6 +2,7 @@
 
 body {
     --text: #e7f4e8;
+    --text-lighter: #d3cdcd;
     --background: #081309;
     --background-disabled: #29372a;
     --background-lighter: #1f3121;
@@ -12,6 +13,7 @@ body {
 }
 body.day {
     --text: #111212;
+    --text-lighter: #5a5f5f;
     --background: #99eef9;
     --background-disabled: #7fbbc3;
     --background-lighter: #ade6ed;
@@ -22,6 +24,7 @@ body.day {
 }
 body.night {
     --text: #e4e9ef;
+    --text-lighter: #bbbbbb;
     --background: #041224;
     --background-disabled: #3a4b61;
     --background-lighter: #1e3553;
@@ -32,6 +35,7 @@ body.night {
 }
 body.rainy {
     --text: #ebf5f7;
+    --text-lighter: #bbbbbb;
     --background: #3a4e51;
     --background-disabled: #58686b;
     --background-lighter: #526669;
@@ -39,6 +43,17 @@ body.rainy {
     --secondary: #1b7785;
     --secondary-hover: #176773;
     --accent: #4ccfe4;
+}
+body.cloudy {
+    --text: #f5eded;
+    --text-lighter: #d3cdcd;
+    --background: #595959;
+    --background-disabled: #6d6d6d;
+    --background-lighter: #494949;
+    --primary: #a9a9a9;
+    --secondary: #1f1d1d;
+    --secondary-hover: #3f3a3a;
+    --accent: #ffffff;
 }
 * {
     font-family: "Nunito";
@@ -62,8 +77,15 @@ button {
     cursor: pointer;
     transition: 0.3s;
 }
+button.text {
+    background-color: var(--text);
+    color: var(--background);
+}
 button:hover {
     background-color: var(--secondary-hover);
+}
+button.text:hover {
+    background-color: var(--text-lighter);
 }
 button:disabled {
     background-color: var(--background-disabled);
@@ -91,8 +113,17 @@ input {
     transition: 0.2s;
     color: var(--text);
 }
+input::placeholder {
+    color: var(--text-lighter);
+}
+.weather-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
 .weather-card {
-    display: inline-flex;
+    display: flex;
+    margin: auto;
     flex-direction: column;
     align-items: center;
     gap: 0.8rem;
@@ -100,6 +131,9 @@ input {
     border-radius: 6px;
     border: 1px solid var(--primary);
     box-shadow: 0 0 2rem -3px var(--primary);
+}
+.weather-card.forecast-list {
+    box-shadow: 0 0 0.4rem 0px var(--primary);
 }
 .weather-card img {
     width: 4rem;
@@ -111,4 +145,39 @@ input {
 .hero {
     font-size: 3rem;
     padding-bottom: 1rem;
+}
+.current-weather {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+table {
+    border-collapse: collapse;
+    border-radius: 6px;
+    box-shadow: 0 0 0.5rem 0px var(--secondary);
+}
+table th {
+    background-color: var(--text);
+    color: var(--background);
+}
+table thead tr th:first-child {
+    border-radius: 6px 0 0 0;
+}
+table thead tr th:last-child {
+    border-radius: 0 6px 0 0;
+}
+table tbody tr:last-child td:first-child {
+    border-radius: 0 0 0 6px;
+}
+table tbody tr:last-child td:last-child {
+    border-radius: 0 0 6px 0;
+}
+table :is(th, td){
+    padding: 0.5rem 1rem;
+}
+table tbody tr {
+    background-color: var(--background-disabled);
+}
+table tbody tr:nth-child(even) {
+    background-color: var(--background);
 }

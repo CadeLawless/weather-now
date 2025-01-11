@@ -54,6 +54,7 @@ function App() {
 
   const [city, setCity] = useStorageState("city", "");
   const [state, setState] = useStorageState("state", "");
+  const [degreeType, setDegreeType] = useStorageState("degreeType", "F");
   const [locationParams, setLocationParams] = React.useState(`${city},${state}`);
 
   const [weather, dispatchWeather] = React.useReducer(
@@ -67,7 +68,7 @@ function App() {
 
       try {
         const result = await axios.get(
-          `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${locationParams}`
+          `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${locationParams}`
         );
 
         dispatchWeather({
@@ -88,10 +89,14 @@ function App() {
   const handleCityInput = (event) => setCity(event.target.value);
 
   const handleStateInput = (event) => setState(event.target.value);
-  
+
   const handleSearchSubmit = (event) => {
     setLocationParams(`${city},${state}`);
     event.preventDefault();
+  };
+
+  const toggleDegreeType = () => {
+    setDegreeType((prevType) => (prevType === "F" ? "C" : "F"));
   };
 
   React.useEffect(() => {
@@ -147,36 +152,107 @@ function App() {
       {weather.isLoading ? (
         <p>Loading...</p>
       ) : (
-        !weather.isError && weather.data?.location && weather.data?.current && <WeatherSummary weather={weather.data} />
+        !weather.isError && weather.data?.location && weather.data?.current && (
+          <div className="weather-cards-container">
+            <div className="current-weather">
+              <div>
+                <Button onClickFn={toggleDegreeType} className='text'>
+                  Switch to {degreeType === "F" ? "Celsius" : "Fahrenheit"}
+                </Button>
+              </div>
+              <WeatherSummary weather={weather.data} degreeType={degreeType} />
+            </div>
+            <ForecastSummary weather={weather.data.forecast.forecastday[0]} degreeType={degreeType} />
+          </div>
+        )
       )}
     </div>
   );
 }
 
-const WeatherSummary = ({ weather }) => {  
+const WeatherSummary = ({ weather, degreeType }) => {  
+
   const date = new Date(weather.current.last_updated_epoch * 1000);
 
   const date_updated = date.toLocaleString('en-US');
+
+  const temperature = degreeType === "F" 
+    ? Math.round(weather.current.temp_f) 
+    : Math.round(weather.current.temp_c);
+
+  const feelsLike = degreeType === "F"
+    ? Math.round(weather.current.feelslike_f)
+    : Math.round(weather.current.feelslike_c);
 
   return (
     <div className="weather-card">
       <div className="location">{weather.location.name}, {weather.location.region}</div>
       <img src={weather.current.condition.icon} />
-      <div className="hero temp">{Math.round(weather.current.temp_f)}°F</div>
-      <div>Feels Like: {Math.round(weather.current.feelslike_f)}°F</div>
+      <div className="hero temp">{temperature}°{degreeType}</div>
+      <div>Feels Like: {feelsLike}°{degreeType}</div>
       <div>Condition: {weather.current.condition.text}</div>
       <div className="last-updated"><em>Last updated: {date_updated}</em></div>
+    </div>
+  );
+};
+const ForecastSummary = ({ weather, degreeType }) => {  
+  const formatDate = (unixDate) => {
+    const date = new Date(unixDate * 1000);
+
+    const formattedDate = date.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    });
+
+    return formattedDate;
+  };
+
+  return (
+    <div className="forecast-list weather-card">
+      <h2>Hourly Forecast</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Temp</th>
+            <th>Feels Like</th>
+            <th>Condition</th>
+          </tr>
+        </thead>
+        <tbody>
+        {weather.hour.map((hour) => {
+          const temperature = degreeType === "F" 
+            ? Math.round(hour.temp_f) 
+            : Math.round(hour.temp_c);
+
+          const feelsLike = degreeType === "F"
+            ? Math.round(hour.feelslike_f)
+            : Math.round(hour.feelslike_c);
+
+          return (
+            <tr key={hour.time_epoch}>
+              <td>{formatDate(hour.time_epoch)}</td>
+              <td>{temperature}°{degreeType}</td>
+              <td>{feelsLike}°{degreeType}</td>
+              <td>{hour.condition.text}</td>
+            </tr>
+          );
+        })}
+        </tbody>
+      </table>
     </div>
   );
 };
 
 const Button = ({
   onClickFn = null,
+  className='',
   type = 'button',
   disabled = false,
   children,
 }) => (
-  <button type={type} disabled={disabled} onClick={onClickFn !== null ? onClickFn : undefined}>{children}</button>
+  <button className={className} type={type} disabled={disabled} onClick={onClickFn !== null ? onClickFn : undefined}>{children}</button>
 );
 
 

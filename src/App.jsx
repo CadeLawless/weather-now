@@ -1,19 +1,9 @@
 import React from "react";
 import axios from "axios";
 import API_KEY  from "./config";
+import * as Utils from './utils';
 import './App.css'
 
-const useStorageState = (key, initialState) => {
-  const [value, setValue] = React.useState(
-    localStorage.getItem(key) || initialState
-  );
-
-  React.useEffect(() => {
-    localStorage.setItem(key, value);
-  }, [value]);
-
-  return [value, setValue];
-};
 
 function App() {  
   const weatherReducer = (state, action ) => {
@@ -23,9 +13,6 @@ function App() {
           ...state,
           isLoading: true,
           isError: false,
-          isDay: null,
-          isCloudy: null,
-          isRainy: null,
         };
       case 'FETCH_WEATHER_SUCCESS':
         return {
@@ -52,10 +39,12 @@ function App() {
     }
   };
 
-  const [city, setCity] = useStorageState("city", "");
-  const [state, setState] = useStorageState("state", "");
-  const [degreeType, setDegreeType] = useStorageState("degreeType", "F");
-  const [locationParams, setLocationParams] = React.useState(`${city},${state}`);
+  const [city, setCity] = Utils.useStorageState("city", "");
+  const [state, setState] = Utils.useStorageState("state", "");
+  const [submittedInformation, setSubmittedInformation] = React.useState(
+    { "city": city, "state": state }
+  );
+  const [degreeType, setDegreeType] = Utils.useStorageState("degreeType", "F");
 
   const [weather, dispatchWeather] = React.useReducer(
     weatherReducer,
@@ -68,7 +57,7 @@ function App() {
 
       try {
         const result = await axios.get(
-          `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${locationParams}`
+          `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${submittedInformation.city},${submittedInformation.state}`
         );
 
         dispatchWeather({
@@ -80,7 +69,7 @@ function App() {
         dispatchWeather({ type: 'FETCH_WEATHER_FAILURE' });
       }
     }
-  }, [locationParams]);
+  }, [submittedInformation]);
 
   React.useEffect(() => {
     handleFetchWeather();
@@ -91,7 +80,7 @@ function App() {
   const handleStateInput = (event) => setState(event.target.value);
 
   const handleSearchSubmit = (event) => {
-    setLocationParams(`${city},${state}`);
+    setSubmittedInformation({ "city": city, "state": state });
     event.preventDefault();
   };
 
@@ -99,44 +88,33 @@ function App() {
     setDegreeType((prevType) => (prevType === "F" ? "C" : "F"));
   };
 
-  React.useEffect(() => {
-    if(weather.isDay !== null){
-      if (weather.isDay) {
-        if(weather.isCloudy){
-          document.body.classList.add("cloudy");
-          document.body.classList.remove("night", "day", "rainy");
-        }else if(weather.isRainy){
-          document.body.classList.add("rainy");
-          document.body.classList.remove("night", "day", "cloudy");
-        }else{
-          document.body.classList.add("day");
-          document.body.classList.remove("night", "cloudy", "rainy");
-        }
-      } else {
-        document.body.classList.add("night");
-        document.body.classList.remove("day", "cloudy", "rainy");
-      }
-    }else{
-      document.body.classList.remove("day", "night", "cloudy", "rainy");
-    }
-  }, [weather.isDay]);
+  const weatherClass = weather.isDay === null ? [] : 
+    weather.isDay ? 
+      weather.isCloudy ? ["cloudy"] : 
+      weather.isRainy ? ["rainy"] : ["day"] : 
+    ["night"];
+
+  document.body.classList.remove("day", "night", "cloudy", "rainy");
+  if (weatherClass.length) {
+    document.body.classList.add(...weatherClass);
+  }
 
   return (
     <div style={{ textAlign: "center", padding: "20px" }}>
       <h1>WeatherNow</h1>
       <form onSubmit={handleSearchSubmit}>
         <div className="input-group">
-          <input
+          <Input
             type="search"
             placeholder="Enter city name"
             value={city}
-            onChange={handleCityInput}
+            onChangeFn={handleCityInput}
           />
-          <input
+          <Input
             type="search"
             placeholder="Enter state name"
             value={state}
-            onChange={handleStateInput}
+            onChangeFn={handleStateInput}
           />
         </div>
         <Button
@@ -170,42 +148,37 @@ function App() {
   );
 }
 
-const WeatherSummary = ({ weather, degreeType }) => {  
+const WeatherSummary = ({ weather, degreeType }) => {
+  const dateFormatOptions = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+    timeZoneName: 'short'
+  };
 
-  const date = new Date(weather.current.last_updated_epoch * 1000);
-
-  const date_updated = date.toLocaleString('en-US');
-
-  const temperature = degreeType === "F" 
-    ? Math.round(weather.current.temp_f) 
-    : Math.round(weather.current.temp_c);
-
-  const feelsLike = degreeType === "F"
-    ? Math.round(weather.current.feelslike_f)
-    : Math.round(weather.current.feelslike_c);
+  const region = weather.location.region == weather.location.name
+    ? weather.location.country
+    : weather.location.region;
 
   return (
     <div className="weather-card">
-      <div className="location">{weather.location.name}, {weather.location.region}</div>
+      <div className="location">{weather.location.name}, {region}</div>
       <img src={weather.current.condition.icon} />
-      <div className="hero temp">{temperature}°{degreeType}</div>
-      <div>Feels Like: {feelsLike}°{degreeType}</div>
+      <div className="hero temp">{Utils.findTemperature(weather.current, degreeType, 'temp')}°{degreeType}</div>
+      <div>Feels Like: {Utils.findTemperature(weather.current, degreeType, 'feelslike')}°{degreeType}</div>
       <div>Condition: {weather.current.condition.text}</div>
-      <div className="last-updated"><em>Last updated: {date_updated}</em></div>
+      <div className="last-updated"><em>Last updated: {Utils.formatDate(weather.current.last_updated_epoch, {...dateFormatOptions, timeZone: weather.location.tz_id})}</em></div>
     </div>
   );
 };
 const ForecastSummary = ({ weather, degreeType }) => {  
-  const formatDate = (unixDate) => {
-    const date = new Date(unixDate * 1000);
-
-    const formattedDate = date.toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true
-    });
-
-    return formattedDate;
+  const dateFormatOptions = {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
   };
 
   return (
@@ -222,19 +195,11 @@ const ForecastSummary = ({ weather, degreeType }) => {
         </thead>
         <tbody>
         {weather.hour.map((hour) => {
-          const temperature = degreeType === "F" 
-            ? Math.round(hour.temp_f) 
-            : Math.round(hour.temp_c);
-
-          const feelsLike = degreeType === "F"
-            ? Math.round(hour.feelslike_f)
-            : Math.round(hour.feelslike_c);
-
           return (
             <tr key={hour.time_epoch}>
-              <td>{formatDate(hour.time_epoch)}</td>
-              <td>{temperature}°{degreeType}</td>
-              <td>{feelsLike}°{degreeType}</td>
+              <td>{Utils.formatDate(hour.time_epoch, dateFormatOptions)}</td>
+              <td>{Utils.findTemperature(hour, degreeType, 'temp')}°{degreeType}</td>
+              <td>{Utils.findTemperature(hour, degreeType, 'feelslike')}°{degreeType}</td>
               <td>{hour.condition.text}</td>
             </tr>
           );
@@ -255,5 +220,20 @@ const Button = ({
   <button className={className} type={type} disabled={disabled} onClick={onClickFn !== null ? onClickFn : undefined}>{children}</button>
 );
 
+const Input = ({
+  onChangeFn = null,
+  value='',
+  placeholder='',
+  type = 'text',
+  disabled = false,
+}) => (
+  <input
+    type={type}
+    placeholder={placeholder}
+    value={value}
+    disabled={disabled}
+    onChange={onChangeFn !== null ? onChangeFn : undefined}
+  />
+);
 
 export default App
